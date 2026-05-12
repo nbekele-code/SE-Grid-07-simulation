@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SE-Grid-07 | Thesis Simulation v6 — Nikodimos Bekele</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&family=Orbitron:wght@400;700;900&display=swap');
+:root{
+  --bg:#03060f;--panel:#060c1a;--border:#0d1e3a;--border2:#1a3060;
+  --accent:#00c8ff;--green:#00ff9d;--yellow:#ffd600;--orange:#ff7700;
+  --red:#ff1a3c;--dim:#2a4060;--text:#b0cce8;
+  --mono:'Share Tech Mono',monospace;--head:'Orbitron',sans-serif;--body:'Exo 2',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--body);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.03) 3px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:9999;}
+
+/* HEADER */
+header{flex-shrink:0;height:50px;background:linear-gradient(90deg,#020508,#06122a,#020508);border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;padding:0 14px;position:relative;}
+header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
+.logo{font-family:var(--head);font-size:16px;font-weight:900;color:var(--accent);letter-spacing:3px;text-shadow:0 0 20px rgba(0,200,255,.5);}
+.h-sub{font-family:var(--mono);font-size:8px;color:var(--dim);line-height:1.7;}
+.h-right{display:flex;gap:10px;align-items:center;}
+.clock{font-family:var(--mono);font-size:10px;color:var(--accent);text-align:right;line-height:1.5;}
+.nis2{font-family:var(--mono);font-size:8px;padding:3px 8px;border-radius:2px;border:1px solid var(--green);color:var(--green);background:rgba(0,255,157,.04);transition:all .3s;}
+.nis2.breach{border-color:var(--red);color:var(--red);background:rgba(255,26,60,.06);animation:blink .6s infinite;}
+.sci-badge{font-family:var(--mono);font-size:7px;color:var(--dim);border:1px solid var(--border2);padding:2px 5px;border-radius:2px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* MAIN */
+.main{flex:1;display:grid;grid-template-columns:1fr 230px 1fr;grid-template-rows:1fr 130px;gap:1px;background:var(--border);overflow:hidden;}
+.panel{background:var(--panel);display:flex;flex-direction:column;overflow:hidden;position:relative;}
+.ph{padding:7px 11px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.pt{font-family:var(--head);font-size:9px;letter-spacing:2px;font-weight:700;}
+.ps{font-family:var(--mono);font-size:7px;color:var(--dim);margin-top:1px;}
+.pc{flex:1;overflow:auto;padding:8px 10px;}
+.tag{font-family:var(--mono);font-size:7px;padding:2px 5px;border-radius:2px;border:1px solid;}
+.tag-wad{color:var(--green);border-color:rgba(0,255,157,.3);background:rgba(0,255,157,.05);}
+.tag-wai{color:var(--accent);border-color:rgba(0,200,255,.3);background:rgba(0,200,255,.05);}
+.pwad .ph{background:rgba(0,255,157,.02);}
+.pwad .ph::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--green),transparent);}
+.pwad .pt{color:var(--green);}
+.pwai .ph{background:rgba(0,200,255,.02);}
+.pwai .ph::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent));}
+.pwai .pt{color:var(--accent);}
+.patk{grid-column:2;grid-row:1/3;}
+.patk .ph{background:rgba(255,26,60,.02);}
+.patk .ph::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent);}
+.patk .pt{color:var(--red);}
+.plog{grid-column:1;grid-row:2;}
+.pref{grid-column:3;grid-row:2;}
+
+/* 3D */
+#canvas3d{width:100%;height:200px;display:block;border-bottom:1px solid var(--border);}
+
+/* ALARM */
+.alarm{padding:5px 9px;border-radius:2px;font-family:var(--mono);font-size:8px;margin-bottom:6px;border-left:3px solid;transition:all .4s;line-height:1.7;}
+.al-none{border-color:var(--green);background:rgba(0,255,157,.04);color:var(--green);}
+.al-adv{border-color:var(--yellow);background:rgba(255,214,0,.04);color:var(--yellow);}
+.al-warn{border-color:var(--orange);background:rgba(255,119,0,.06);color:var(--orange);}
+.al-crit{border-color:var(--red);background:rgba(255,26,60,.08);color:var(--red);animation:blink .8s infinite;}
+.al-trip{border-color:var(--red);background:rgba(255,26,60,.14);color:var(--red);animation:blink .4s infinite;}
+
+/* LAYER BOXES */
+.lbox{border:1px solid var(--border2);border-radius:3px;margin-bottom:6px;overflow:hidden;}
+.lhead{padding:4px 8px;display:flex;align-items:center;justify-content:space-between;font-family:var(--mono);font-size:8px;font-weight:bold;letter-spacing:1px;}
+.l-net .lhead{background:rgba(0,200,255,.06);color:var(--accent);}
+.l-plc .lhead{background:rgba(255,214,0,.06);color:var(--yellow);}
+.l-phys .lhead{background:rgba(0,255,157,.04);color:var(--green);}
+.l-phys.bad .lhead{background:rgba(255,119,0,.05);color:var(--orange);}
+.lbody{padding:6px 8px;}
+
+/* COILS */
+.coil-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:5px;}
+.coil{background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:2px;padding:5px;text-align:center;}
+.coil-label{font-family:var(--mono);font-size:7px;color:var(--dim);margin-bottom:2px;line-height:1.4;}
+.coil-val{font-family:var(--mono);font-size:11px;font-weight:bold;transition:color .3s;}
+.cv-on{color:var(--green);}
+.cv-off{color:var(--red);animation:blink .5s infinite;}
+
+/* REGISTER TABLE */
+.reg-table{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:4px;}
+.rt-item{background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:2px;padding:3px 5px;}
+.rt-key{font-family:var(--mono);font-size:7px;color:var(--dim);}
+.rt-val{font-family:var(--mono);font-size:9px;font-weight:bold;transition:color .3s;}
+.rv-ok{color:var(--green);}
+.rv-spoofed{color:var(--orange);animation:blink .7s infinite;}
+.rv-crit{color:var(--red);}
+
+/* PLC STATUS */
+.plc-badge{font-family:var(--mono);font-size:8px;padding:4px 7px;border-radius:2px;border:1px solid;margin-top:4px;text-align:center;transition:all .3s;}
+.pb-ok{color:var(--green);border-color:rgba(0,255,157,.3);background:rgba(0,255,157,.04);}
+.pb-bad{color:var(--red);border-color:rgba(255,26,60,.4);background:rgba(255,26,60,.06);animation:blink .7s infinite;}
+.pb-warn{color:var(--orange);border-color:rgba(255,119,0,.3);background:rgba(255,119,0,.05);}
+
+/* GAUGES */
+.gauges{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px;}
+.gauge{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:3px;padding:6px 7px;}
+.g-label{font-family:var(--mono);font-size:7px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
+.g-val{font-family:var(--mono);font-size:15px;font-weight:bold;line-height:1;transition:color .4s;}
+.g-unit{font-size:7px;color:var(--dim);margin-left:2px;}
+.g-bar-bg{height:2px;background:var(--border);border-radius:1px;margin-top:3px;overflow:hidden;}
+.g-bar{height:100%;border-radius:1px;transition:width .4s,background .4s;}
+.g-stat{font-family:var(--mono);font-size:7px;margin-top:2px;transition:color .4s;}
+.c-ok{color:var(--green);}.c-adv{color:var(--yellow);}.c-warn{color:var(--orange);}.c-crit{color:var(--red);}
+.f-ok{background:var(--green);}.f-adv{background:var(--yellow);}.f-warn{background:var(--orange);}.f-crit{background:var(--red);}
+
+/* AGING */
+.age-box{background:rgba(0,0,0,.4);border:1px solid var(--border2);border-radius:2px;padding:5px 7px;margin-bottom:5px;}
+.age-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;}
+.slabel{font-family:var(--mono);font-size:7px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
+.age-val{font-family:var(--mono);font-size:10px;transition:color .4s;}
+
+/* FROZEN BANNER */
+.frozen{display:none;background:rgba(255,26,60,.08);border:1px solid var(--red);border-radius:2px;padding:4px 8px;font-family:var(--mono);font-size:8px;color:var(--red);text-align:center;margin-bottom:5px;animation:blink .8s infinite;}
+.frozen.show{display:block;}
+
+/* HMI INFO BOX */
+.hmi-info{background:rgba(0,0,0,.3);border:1px solid var(--border2);border-radius:2px;padding:5px 7px;margin-bottom:6px;}
+.hmi-info-title{font-family:var(--mono);font-size:7px;color:var(--accent);margin-bottom:3px;text-transform:uppercase;letter-spacing:1px;}
+.hmi-info-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border);}
+.hmi-info-row:last-child{border-bottom:none;}
+.hmi-info-key{font-family:var(--mono);font-size:7px;color:var(--dim);}
+.hmi-info-val{font-family:var(--mono);font-size:7px;font-weight:bold;transition:color .3s;}
+
+/* REG COMPLIANCE */
+.reg-grid{display:flex;flex-direction:column;gap:3px;}
+.reg-row{display:flex;justify-content:space-between;align-items:center;padding:3px 6px;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:2px;}
+.reg-key{font-family:var(--mono);font-size:7px;color:var(--dim);}
+.reg-v{font-family:var(--mono);font-size:7px;font-weight:bold;transition:color .3s;}
+
+/* ATTACK PANEL */
+.atk-sec{margin-bottom:11px;padding-bottom:11px;border-bottom:1px solid var(--border);}
+.atk-sec:last-child{border-bottom:none;}
+.mitre-tag{font-family:var(--mono);font-size:7px;color:var(--red);letter-spacing:1px;margin-bottom:2px;}
+.atk-name{font-family:var(--head);font-size:10px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.atk-desc{font-family:var(--body);font-size:9px;color:var(--dim);line-height:1.5;margin-bottom:6px;}
+.btn{width:100%;padding:7px;border:1px solid;background:transparent;cursor:pointer;font-family:var(--mono);font-size:8px;letter-spacing:1px;border-radius:2px;transition:all .2s;}
+.btn-red{color:var(--red);border-color:var(--red);}
+.btn-red:hover{background:rgba(255,26,60,.08);}
+.btn-red.active{background:rgba(255,26,60,.1);animation:pb 1s infinite;}
+.btn-stop{color:var(--dim);border-color:var(--border2);margin-top:3px;}
+.btn-reset{color:var(--accent);border-color:var(--accent);margin-top:6px;}
+@keyframes pb{0%,100%{box-shadow:0 0 5px rgba(255,26,60,.2)}50%{box-shadow:0 0 14px rgba(255,26,60,.5)}}
+.atk-st{font-family:var(--mono);font-size:7px;padding:3px 6px;border-radius:2px;margin-top:3px;text-align:center;border:1px solid;}
+.st-idle{color:var(--dim);border-color:var(--border);}
+.st-on{color:var(--red);border-color:var(--red);background:rgba(255,26,60,.04);}
+.tl{display:flex;flex-direction:column;gap:3px;margin:6px 0;}
+.tl-i{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:7px;color:var(--dim);padding:3px 5px;border-radius:2px;transition:all .3s;}
+.tl-done{color:var(--green);background:rgba(0,255,157,.04);}
+.tl-active{color:var(--red);background:rgba(255,26,60,.04);animation:blink 1s infinite;}
+.tl-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;box-shadow:0 0 3px currentColor;}
+.gap-box{padding:5px 8px;border-radius:2px;font-family:var(--mono);font-size:7px;border-left:2px solid;line-height:1.6;transition:all .3s;}
+.sep{height:1px;background:var(--border);margin:6px 0;}
+.log-wrap{font-family:var(--mono);font-size:7px;line-height:1.9;overflow-y:auto;height:100%;}
+.log-row{display:flex;gap:7px;}
+.log-t{color:var(--dim);flex-shrink:0;}
+.log-ok{color:var(--green);}.log-info{color:var(--accent);}.log-warn{color:var(--yellow);}.log-alert{color:var(--red);}
+.ref-panel{font-family:var(--mono);font-size:7px;line-height:1.9;overflow-y:auto;height:100%;}
+.ref-row{display:flex;gap:6px;}
+.ref-src{color:var(--accent);flex-shrink:0;min-width:72px;}
+.ref-text{color:var(--dim);}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="logo">SE-GRID-07</div>
+    <div>
+      <div style="font-family:var(--head);font-size:9px;color:var(--accent);letter-spacing:2px;">TOTALFÖRSVARET — SWEDISH 400kV POWER GRID</div>
+      <div class="h-sub">400kV/130kV Substation &nbsp;|&nbsp; 250 MVA OFAF Transformer &nbsp;|&nbsp; RTU/PLC on Modbus TCP Port 502<br>
+      Thesis: From Compliance to Resilience — Nikodimos Bekele (2IFS1) &nbsp;|&nbsp; NIS2 / Cybersecurity Act 2025:1506</div>
+    </div>
+  </div>
+  <div class="h-right">
+    <div class="sci-badge">IEC 60076-7</div>
+    <div class="sci-badge">MITRE ICS</div>
+    <div class="sci-badge">WAI/WAD</div>
+    <div class="clock" id="clock">--:--:--<br>CET</div>
+    <div class="nis2" id="nis2badge">NIS2 COMPLIANT</div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ══ LEFT: PHYSICAL PLANT WAD ══ -->
+  <div class="panel pwad" style="grid-column:1;grid-row:1;">
+    <div class="ph">
+      <div>
+        <div class="pt">PHYSICAL PLANT — WORK-AS-DONE (WAD)</div>
+        <div class="ps">ACTUAL PHYSICAL REALITY &nbsp;|&nbsp; What is REALLY happening &nbsp;|&nbsp; Network → RTU/PLC → Actuators → Physical consequence</div>
+      </div>
+      <span class="tag tag-wad">WAD</span>
+    </div>
+
+    <canvas id="canvas3d"></canvas>
+
+    <div class="pc" style="padding:7px 9px;">
+
+      <!-- LAYER 1: NETWORK -->
+      <div class="lbox l-net">
+        <div class="lhead">
+          <span>LAYER 1 — NETWORK LAYER (Attack Entry Point)</span>
+          <span id="net-st" style="color:var(--green);">OPEN / UNPROTECTED</span>
+        </div>
+        <div class="lbody" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;">
+          <div><div class="slabel">Protocol</div><div style="font-family:var(--mono);font-size:9px;color:var(--yellow);">Modbus TCP</div></div>
+          <div><div class="slabel">Port</div><div style="font-family:var(--mono);font-size:9px;color:var(--yellow);">502 open</div></div>
+          <div><div class="slabel">Auth Required</div><div style="font-family:var(--mono);font-size:9px;color:var(--red);">NONE</div></div>
+          <div><div class="slabel">Year Designed</div><div style="font-family:var(--mono);font-size:9px;color:var(--dim);">1979</div></div>
+          <div style="grid-column:1/5;"><div class="slabel">Network Activity</div><div style="font-family:var(--mono);font-size:8px;" id="net-log">No unauthorized connections detected</div></div>
+        </div>
+      </div>
+
+      <!-- LAYER 2: RTU/PLC -->
+      <div class="lbox l-plc">
+        <div class="lhead">
+          <span>LAYER 2 — RTU / PLC (What T0832 + T0855 Actually Attack)</span>
+          <span id="plc-badge-text" style="color:var(--green);">NORMAL</span>
+        </div>
+        <div class="lbody">
+
+          <div style="font-family:var(--mono);font-size:7px;color:var(--dim);margin-bottom:5px;line-height:1.6;">
+            The RTU/PLC is a small industrial computer mounted in the substation control cabinet.
+            It has two memory areas: <span style="color:var(--yellow);">COILS</span> (digital on/off outputs to actuators) and
+            <span style="color:var(--orange);">REGISTERS</span> (sensor values that the SCADA HMI reads).
+            T0855 attacks coils. T0832 attacks registers. Both via unauthenticated Modbus TCP.
+          </div>
+
+          <div class="slabel">OUTPUT COILS — Direct actuator control signals (T0855 attacks these)</div>
+          <div class="coil-row">
+            <div class="coil">
+              <div class="coil-label">Coil 0<br>Inlet Valve<br>Motor</div>
+              <div class="coil-val cv-on" id="coil0">TRUE</div>
+              <div style="font-family:var(--mono);font-size:6px;color:var(--dim);margin-top:2px;">→ Valve OPEN</div>
+            </div>
+            <div class="coil">
+              <div class="coil-label">Coil 1<br>Outlet Valve<br>Motor</div>
+              <div class="coil-val cv-on" id="coil1">TRUE</div>
+              <div style="font-family:var(--mono);font-size:6px;color:var(--dim);margin-top:2px;">→ Valve OPEN</div>
+            </div>
+            <div class="coil">
+              <div class="coil-label">Coil 2<br>Cooling Pump<br>Enable</div>
+              <div class="coil-val cv-on" id="coil2">TRUE</div>
+              <div style="font-family:var(--mono);font-size:6px;color:var(--dim);margin-top:2px;">→ Pump ON</div>
+            </div>
+          </div>
+
+          <div class="slabel">HOLDING REGISTERS — Sensor values (SCADA HMI reads these — T0832 attacks these)</div>
+          <div class="reg-table">
+            <div class="rt-item">
+              <div class="rt-key">Reg 0 — Winding Temp (×10)</div>
+              <div class="rt-val rv-ok" id="reg0">740 → 74.0°C</div>
+            </div>
+            <div class="rt-item">
+              <div class="rt-key">Reg 1 — Oil Temp (×10)</div>
+              <div class="rt-val rv-ok" id="reg1">680 → 68.0°C</div>
+            </div>
+            <div class="rt-item">
+              <div class="rt-key">Reg 2 — Pump RPM (×10)</div>
+              <div class="rt-val rv-ok" id="reg2">14500 → 1450 RPM</div>
+            </div>
+            <div class="rt-item">
+              <div class="rt-key">Reg 3 — Flow (×10)</div>
+              <div class="rt-val rv-ok" id="reg3">8400 → 840 L/min</div>
+            </div>
+          </div>
+
+          <div class="plc-badge pb-ok" id="plc-main-status">RTU/PLC INTEGRITY: NORMAL — No unauthorized Modbus commands detected</div>
+        </div>
+      </div>
+
+      <!-- LAYER 3: PHYSICAL -->
+      <div class="lbox l-phys" id="phys-layer">
+        <div class="lhead">
+          <span>LAYER 3 — PHYSICAL CONSEQUENCE (Secondary effect of RTU/PLC attack)</span>
+          <span id="phys-badge" style="color:var(--green);">NOMINAL</span>
+        </div>
+        <div class="lbody">
+          <div id="consequence-note" style="display:none;font-family:var(--mono);font-size:7px;color:var(--orange);background:rgba(255,119,0,.06);border:1px solid rgba(255,119,0,.2);border-radius:2px;padding:3px 6px;margin-bottom:5px;">
+            Physical degradation = CONSEQUENCE of RTU/PLC coils forced FALSE by T0855. Not a direct hardware attack.
+          </div>
+          <div class="alarm al-none" id="wad-alarm">✓ ALL SYSTEMS NOMINAL — IEC 60076-7 WITHIN SAFE LIMITS</div>
+          <div class="gauges">
+            <div class="gauge">
+              <div class="g-label">Valve Position V-01/V-02</div>
+              <div><span class="g-val c-ok" id="wad-valve">100</span><span class="g-unit">%</span></div>
+              <div class="g-bar-bg"><div class="g-bar f-ok" id="bar-valve" style="width:100%"></div></div>
+              <div class="g-stat c-ok" id="st-valve">Coils 0+1=TRUE → valves OPEN</div>
+            </div>
+            <div class="gauge">
+              <div class="g-label">Cooling Pump</div>
+              <div><span class="g-val c-ok" id="wad-pump">1450</span><span class="g-unit">RPM</span></div>
+              <div class="g-bar-bg"><div class="g-bar f-ok" id="bar-pump" style="width:100%"></div></div>
+              <div class="g-stat c-ok" id="st-pump">Coil 2=TRUE → pump running</div>
+            </div>
+            <div class="gauge">
+              <div class="g-label">Coolant Flow</div>
+              <div><span class="g-val c-ok" id="wad-flow">840</span><span class="g-unit">L/min</span></div>
+              <div class="g-bar-bg"><div class="g-bar f-ok" id="bar-flow" style="width:100%"></div></div>
+              <div class="g-stat c-ok" id="st-flow">Coils 0+1=TRUE → valves open</div>
+            </div>
+            <div class="gauge">
+              <div class="g-label">Winding Temp ⚡</div>
+              <div><span class="g-val c-ok" id="wad-wtemp">74.0</span><span class="g-unit">°C</span></div>
+              <div class="g-bar-bg"><div class="g-bar f-ok" id="bar-wtemp" style="width:38%"></div></div>
+              <div class="g-stat c-ok" id="st-wtemp">IEC 60076-7 (Trip@120°C)</div>
+            </div>
+            <div class="gauge">
+              <div class="g-label">Top-Oil Temp</div>
+              <div><span class="g-val c-ok" id="wad-otemp">68.0</span><span class="g-unit">°C</span></div>
+              <div class="g-bar-bg"><div class="g-bar f-ok" id="bar-otemp" style="width:32%"></div></div>
+              <div class="g-stat c-ok" id="st-otemp">OFAF cooling τ=90min</div>
+            </div>
+            <div class="gauge">
+              <div class="g-label">Oil Pressure</div>
+              <div><span class="g-val c-ok" id="wad-pres">2600</span><span class="g-unit">kPa</span></div>
+              <div class="g-bar-bg"><div class="g-bar f-ok" id="bar-pres" style="width:87%"></div></div>
+              <div class="g-stat c-ok" id="st-pres">Nominal system pressure</div>
+            </div>
+            <div class="gauge">
+              <div class="g-label">Grid Load</div>
+              <div><span class="g-val c-ok" id="wad-load">180</span><span class="g-unit">MVA</span></div>
+              <div class="g-bar-bg"><div class="g-bar f-ok" id="bar-load" style="width:72%"></div></div>
+              <div class="g-stat c-ok" id="st-load">K=0.72 load factor</div>
+            </div>
+          </div>
+          <div class="age-box">
+            <div class="slabel">IEC 60076-7 Insulation Ageing (V = e^((θHS-θref)/6), θref=98°C)</div>
+            <div class="age-grid">
+              <div><div class="slabel">Ageing Rate V</div><div class="age-val c-ok" id="aging-rate">1.00×</div></div>
+              <div><div class="slabel">Loss of Life</div><div class="age-val c-ok" id="aging-lol">0.000 h</div></div>
+              <div><div class="slabel">Load Factor K</div><div class="age-val c-ok">0.72 (180/250)</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ CENTER: ATTACK CONSOLE ══ -->
+  <div class="panel patk">
+    <div class="ph">
+      <div><div class="pt">ATTACK CONSOLE</div><div class="ps">MITRE ATT&CK for ICS</div></div>
+    </div>
+    <div class="pc" style="padding:8px 9px;">
+
+      <div class="slabel">EXECUTION SEQUENCE</div>
+      <div class="tl">
+        <div class="tl-i tl-done" id="ph0"><div class="tl-dot"></div>Baseline established</div>
+        <div class="tl-i" id="ph1"><div class="tl-dot"></div>T0832: Blind HMI registers</div>
+        <div class="tl-i" id="ph2"><div class="tl-dot"></div>T0855: Force PLC coils FALSE</div>
+        <div class="tl-i" id="ph3"><div class="tl-dot"></div>Resilience Gap proven</div>
+      </div>
+      <div class="sep"></div>
+
+      <div class="atk-sec">
+        <div class="mitre-tag">MITRE ATT&CK ICS — T0832</div>
+        <div class="atk-name">Manipulation of View</div>
+        <div class="atk-desc">Writes deceptive values into RTU holding registers via Modbus FC16 — no authentication. <strong>v6: Realistic drift attack</strong> — injects live-looking values with sensor noise (±0.7°C) that slowly drift -0.6°C mimicking a natural load reduction, then stabilise. Operator sees believable "live" data while transformer overheats. FrostyGoop (Ukraine 2024) used identical method.</div>
+        <button class="btn btn-red" id="btn-b1" onclick="startBlind()">▶ EXECUTE T0832 — SPOOF REGISTERS</button>
+        <button class="btn btn-stop" id="btn-b0" onclick="stopBlind()" style="display:none">■ STOP T0832</button>
+        <div class="atk-st st-idle" id="st-blind">IDLE — Registers showing real values</div>
+      </div>
+
+      <div class="atk-sec">
+        <div class="mitre-tag">MITRE ATT&CK ICS — T0855</div>
+        <div class="atk-name">Unauthorized Command Message</div>
+        <div class="atk-desc">Writes FALSE to RTU coils 0,1,2 via Modbus FC15 — no authentication. <strong>v6: Gradual realistic process</strong> — motorized valves take ~15s to close (30 ticks, 600Nm actuator), pump decelerates proportionally then coasts ~5s. Thermal runaway begins as flow drops. NIS2 Art.21 gap: does not mandate Modbus authentication.</div>
+        <button class="btn btn-red" id="btn-s1" onclick="startStrike()">▶ EXECUTE T0855 — CORRUPT COILS</button>
+        <button class="btn btn-stop" id="btn-s0" onclick="stopStrike()" style="display:none">■ STOP T0855</button>
+        <div class="atk-st st-idle" id="st-strike">IDLE — Coils outputting normally</div>
+      </div>
+
+      <div class="sep"></div>
+      <div class="slabel">RESILIENCE GAP STATUS</div>
+      <div class="gap-box al-none" id="gap-box">WAD=WAI — No gap — Hollnagel: aligned</div>
+      <button class="btn btn-reset" onclick="resetAll()">↺ RESET SIMULATION</button>
+
+      <div class="sep"></div>
+      <div class="slabel">REAL-WORLD ATTACKS</div>
+      <div style="font-family:var(--mono);font-size:7px;color:var(--dim);line-height:1.9;">
+        <div style="color:var(--red);">FrostyGoop — Jan 2024</div>
+        <div>Modbus → ENCO controllers</div>
+        <div>600+ buildings — heating lost</div>
+        <div style="margin-top:3px;color:var(--orange);">Poland Dec 2025</div>
+        <div>RTUs + protection relays hit</div>
+        <div>Grid blind — same chain</div>
+        <div style="margin-top:3px;color:var(--yellow);">1,088,175 Modbus TCP</div>
+        <div>devices internet-exposed</div>
+        <div style="color:var(--dim);">(Censys 2024)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT: OPERATOR HMI WAI ══ -->
+  <div class="panel pwai" style="grid-column:3;grid-row:1;">
+    <div class="ph">
+      <div>
+        <div class="pt">OPERATOR HMI — WORK-AS-IMAGINED (WAI)</div>
+        <div class="ps">NATIONAL GRID CONTROL CENTRE &nbsp;|&nbsp; Reads RTU registers only — does NOT show raw coils &nbsp;|&nbsp; NIS2 View</div>
+      </div>
+      <span class="tag tag-wai">WAI</span>
+    </div>
+    <div class="pc" style="padding:4px 6px;overflow:auto;">
+
+      <div class="frozen" id="frozen-banner">&#9888; T0832 ACTIVE &#8212; RTU REGISTERS SPOOFED &#8212; OPERATOR IS BLIND &#8212; Hollnagel WAD&#8800;WAI</div>
+      <div class="alarm al-none" id="hmi-alarm">&#10003; ALL SYSTEMS NOMINAL &#8212; SUBSTATION FULLY OPERATIONAL</div>
+
+      <!-- ── MIMIC DIAGRAM (ISA-101 standard) ── -->
+      <div style="background:#0a1020;border:1px solid var(--border2);border-radius:3px;padding:4px;margin-bottom:5px;">
+        <div style="font-family:var(--mono);font-size:7px;color:var(--accent);margin-bottom:3px;letter-spacing:1px;">
+          MIMIC DIAGRAM &#8212; SE-Grid-07 TRANSFORMER COOLING SYSTEM &#8212; ISA-101
+        </div>
+        <svg id="mimic-svg" viewBox="0 0 420 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+
+          <!-- Background grid -->
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#0d1e3a" stroke-width="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="420" height="200" fill="#080e1e"/>
+          <rect width="420" height="200" fill="url(#grid)"/>
+
+          <!-- ── COOLANT PIPES ── -->
+          <!-- Main supply pipe (top, inlet side) -->
+          <line id="pipe-in-top" x1="60" y1="60" x2="180" y2="60" stroke="#00ff9d" stroke-width="4" stroke-linecap="round"/>
+          <!-- Main return pipe (bottom, outlet side) -->
+          <line id="pipe-out-bot" x1="60" y1="140" x2="180" y2="140" stroke="#00ff9d" stroke-width="4" stroke-linecap="round"/>
+          <!-- Right side supply to transformer top -->
+          <line id="pipe-tfmr-top" x1="240" y1="60" x2="310" y2="60" stroke="#00ff9d" stroke-width="4" stroke-linecap="round"/>
+          <!-- Right side return from transformer bottom -->
+          <line id="pipe-tfmr-bot" x1="240" y1="140" x2="310" y2="140" stroke="#00ff9d" stroke-width="4" stroke-linecap="round"/>
+          <!-- Transformer left riser (connects top to bottom through transformer) -->
+          <line id="pipe-tfmr-left" x1="310" y1="60" x2="310" y2="85" stroke="#00ff9d" stroke-width="4"/>
+          <line id="pipe-tfmr-right" x1="310" y1="115" x2="310" y2="140" stroke="#00ff9d" stroke-width="4"/>
+          <!-- Pump suction/discharge pipes -->
+          <line id="pipe-pump-l" x1="20" y1="100" x2="48" y2="100" stroke="#00ff9d" stroke-width="4"/>
+          <line id="pipe-pump-r" x1="72" y1="100" x2="60" y2="60" stroke="#00ff9d" stroke-width="3"/>
+          <line id="pipe-pump-r2" x1="60" y1="140" x2="72" y2="140" stroke="#00ff9d" stroke-width="3"/>
+          <!-- Vertical connect left -->
+          <line id="pipe-left-vert" x1="60" y1="60" x2="60" y2="80" stroke="#00ff9d" stroke-width="4"/>
+          <line id="pipe-left-vert2" x1="60" y1="120" x2="60" y2="140" stroke="#00ff9d" stroke-width="4"/>
+
+          <!-- Flow arrows on pipes (animated when flowing) -->
+          <g id="flow-arrows-1" opacity="1">
+            <polygon points="110,55 120,60 110,65" fill="#00ff9d" opacity="0.7"/>
+            <polygon points="270,55 280,60 270,65" fill="#00ff9d" opacity="0.7"/>
+            <polygon points="110,145 100,140 110,135" fill="#00ff9d" opacity="0.7"/>
+          </g>
+
+          <!-- ── INLET VALVE (V-01) ── -->
+          <!-- Standard ISA valve symbol: two triangles meeting at point -->
+          <g id="valve-inlet-grp" transform="translate(160,60)">
+            <polygon id="valve-inlet-sym" points="-12,8 0,-8 12,8" fill="#00ff9d" stroke="#00ff9d" stroke-width="1"/>
+            <polygon points="-12,-8 0,8 12,-8" fill="#00ff9d" stroke="#00ff9d" stroke-width="1"/>
+            <line x1="0" y1="-8" x2="0" y2="-16" stroke="#00ff9d" stroke-width="1.5"/>
+            <rect x="-6" y="-22" width="12" height="6" fill="#00ff9d" rx="1"/>
+            <text x="0" y="22" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#b0cce8">V-01</text>
+          </g>
+
+          <!-- ── OUTLET VALVE (V-02) ── -->
+          <g id="valve-outlet-grp" transform="translate(160,140)">
+            <polygon id="valve-outlet-sym" points="-12,8 0,-8 12,8" fill="#00ff9d" stroke="#00ff9d" stroke-width="1"/>
+            <polygon points="-12,-8 0,8 12,-8" fill="#00ff9d" stroke="#00ff9d" stroke-width="1"/>
+            <line x1="0" y1="-8" x2="0" y2="-16" stroke="#00ff9d" stroke-width="1.5"/>
+            <rect x="-6" y="-22" width="12" height="6" fill="#00ff9d" rx="1"/>
+            <text x="0" y="22" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#b0cce8">V-02</text>
+          </g>
+
+          <!-- ── INLET VALVE (V-03) on transformer feed side ── -->
+          <g id="valve-inlet2-grp" transform="translate(260,60)">
+            <polygon id="valve-inlet2-sym" points="-10,7 0,-7 10,7" fill="#00ff9d" stroke="#00ff9d" stroke-width="1"/>
+            <polygon points="-10,-7 0,7 10,-7" fill="#00ff9d" stroke="#00ff9d" stroke-width="1"/>
+            <text x="0" y="20" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#b0cce8">V-03</text>
+          </g>
+
+          <!-- ── COOLING PUMP (P-01) ── -->
+          <g id="pump-grp" transform="translate(60,100)">
+            <!-- Pump casing (circle = standard centrifugal pump symbol) -->
+            <circle id="pump-circle" cx="0" cy="0" r="20" fill="#0a1828" stroke="#00ff9d" stroke-width="2"/>
+            <!-- Pump impeller (rotates when running) -->
+            <g id="pump-impeller">
+              <line x1="0" y1="-12" x2="0" y2="0" stroke="#00ff9d" stroke-width="2"/>
+              <line x1="10.4" y1="6" x2="0" y2="0" stroke="#00ff9d" stroke-width="2"/>
+              <line x1="-10.4" y1="6" x2="0" y2="0" stroke="#00ff9d" stroke-width="2"/>
+            </g>
+            <!-- Status indicator -->
+            <circle id="pump-dot" cx="0" cy="0" r="4" fill="#00ff9d"/>
+            <text x="0" y="35" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#b0cce8">P-01</text>
+            <text id="pump-status-txt" x="0" y="45" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#00ff9d">RUN</text>
+          </g>
+
+          <!-- ── TRANSFORMER (TF-01) ── -->
+          <g transform="translate(310,100)">
+            <!-- Transformer tank -->
+            <rect x="-30" y="-55" width="60" height="110" fill="#0d1e35" stroke="#1a3060" stroke-width="1.5" rx="2"/>
+            <!-- IEC standard transformer symbol - two coils -->
+            <circle cx="-8" cy="-15" r="10" fill="none" stroke="#00c8ff" stroke-width="1.5"/>
+            <circle cx="-8" cy="5" r="10" fill="none" stroke="#00c8ff" stroke-width="1.5"/>
+            <circle cx="8" cy="-15" r="10" fill="none" stroke="#ffd600" stroke-width="1.5"/>
+            <circle cx="8" cy="5" r="10" fill="none" stroke="#ffd600" stroke-width="1.5"/>
+            <!-- Voltage labels -->
+            <text x="-8" y="-32" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#00c8ff">130kV</text>
+            <text x="8" y="-32" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#ffd600">400kV</text>
+            <!-- Transformer ID -->
+            <text x="0" y="42" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#b0cce8">TF-01</text>
+            <text x="0" y="52" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#2a4060">250 MVA</text>
+            <!-- Winding temp sensor indicator -->
+            <rect id="tfmr-heat" x="-28" y="-53" width="56" height="106" fill="transparent" stroke="transparent" rx="2"/>
+          </g>
+
+          <!-- ── RADIATOR / COOLER (E-01) ── -->
+          <g transform="translate(210,100)">
+            <rect x="-20" y="-40" width="40" height="80" fill="#070d1c" stroke="#1a3060" stroke-width="1" rx="2"/>
+            <!-- Radiator fins -->
+            <line x1="-15" y1="-35" x2="-15" y2="35" stroke="#1a3060" stroke-width="2"/>
+            <line x1="-8" y1="-35" x2="-8" y2="35" stroke="#1a3060" stroke-width="2"/>
+            <line x1="-1" y1="-35" x2="-1" y2="35" stroke="#1a3060" stroke-width="2"/>
+            <line x1="6" y1="-35" x2="6" y2="35" stroke="#1a3060" stroke-width="2"/>
+            <line x1="13" y1="-35" x2="13" y2="35" stroke="#1a3060" stroke-width="2"/>
+            <text x="0" y="52" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#2a4060">E-01</text>
+          </g>
+
+          <!-- ── SENSOR OVERLAYS ── -->
+          <!-- Temperature sensor TT-01 (winding) -->
+          <g transform="translate(355,72)">
+            <rect x="-24" y="-10" width="48" height="20" fill="#03060f" stroke="#1a3060" stroke-width="1" rx="2"/>
+            <text x="0" y="-2" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#2a4060">TT-01 WINDING</text>
+            <text id="hmi-wtemp-mimic" x="0" y="8" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" font-weight="bold" fill="#00ff9d">74.0&#176;C</text>
+          </g>
+
+          <!-- Temperature sensor TT-02 (oil) -->
+          <g transform="translate(355,102)">
+            <rect x="-24" y="-10" width="48" height="20" fill="#03060f" stroke="#1a3060" stroke-width="1" rx="2"/>
+            <text x="0" y="-2" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#2a4060">TT-02 OIL</text>
+            <text id="hmi-otemp-mimic" x="0" y="8" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="9" font-weight="bold" fill="#00ff9d">68.0&#176;C</text>
+          </g>
+
+          <!-- Flow meter FT-01 -->
+          <g transform="translate(120,42)">
+            <rect x="-20" y="-9" width="40" height="18" fill="#03060f" stroke="#1a3060" stroke-width="1" rx="2"/>
+            <text x="0" y="-1" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#2a4060">FT-01</text>
+            <text id="hmi-flow-mimic" x="0" y="8" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="8" font-weight="bold" fill="#00ff9d">840</text>
+          </g>
+
+          <!-- Pump speed ST-01 -->
+          <g transform="translate(18,75)">
+            <rect x="-16" y="-9" width="32" height="18" fill="#03060f" stroke="#1a3060" stroke-width="1" rx="2"/>
+            <text x="0" y="-1" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#2a4060">ST-01</text>
+            <text id="hmi-pump-mimic" x="0" y="8" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="8" font-weight="bold" fill="#00ff9d">1450</text>
+          </g>
+
+          <!-- Pressure PT-01 -->
+          <g transform="translate(18,128)">
+            <rect x="-16" y="-9" width="32" height="18" fill="#03060f" stroke="#1a3060" stroke-width="1" rx="2"/>
+            <text x="0" y="-1" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#2a4060">PT-01</text>
+            <text id="hmi-pres-mimic" x="0" y="8" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" font-weight="bold" fill="#00ff9d">2600</text>
+          </g>
+
+          <!-- Grid load MW-01 -->
+          <g transform="translate(380,160)">
+            <rect x="-28" y="-9" width="56" height="18" fill="#03060f" stroke="#1a3060" stroke-width="1" rx="2"/>
+            <text x="0" y="-1" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#2a4060">MW-01 LOAD</text>
+            <text id="hmi-load-mimic" x="0" y="8" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="8" font-weight="bold" fill="#00ff9d">180 MVA</text>
+          </g>
+
+          <!-- Legend -->
+          <g transform="translate(4,188)">
+            <circle cx="6" cy="0" r="3" fill="#00ff9d"/>
+            <text x="12" y="4" font-family="Share Tech Mono,monospace" font-size="6" fill="#2a4060">RUNNING/OPEN</text>
+            <circle cx="80" cy="0" r="3" fill="#ff1a3c"/>
+            <text x="86" y="4" font-family="Share Tech Mono,monospace" font-size="6" fill="#2a4060">FAULT/CLOSED</text>
+            <circle cx="155" cy="0" r="3" fill="#ffd600"/>
+            <text x="161" y="4" font-family="Share Tech Mono,monospace" font-size="6" fill="#2a4060">WARNING</text>
+          </g>
+
+        </svg>
+      </div>
+
+      <!-- ── TEMPERATURE TREND CHART ── -->
+      <div style="background:#080e1e;border:1px solid var(--border2);border-radius:3px;padding:4px;margin-bottom:5px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+          <span style="font-family:var(--mono);font-size:7px;color:var(--accent);letter-spacing:1px;">TREND — WINDING TEMP (°C) — LAST 60 TICKS</span>
+          <span style="font-family:var(--mono);font-size:7px;color:var(--dim);">IEC TRIP: 120°C</span>
+        </div>
+        <svg id="trend-svg" viewBox="0 0 400 50" style="width:100%;height:40px;display:block;">
+          <rect width="400" height="50" fill="#060c1a"/>
+          <!-- Trip line at 120°C -->
+          <line x1="0" y1="4" x2="400" y2="4" stroke="#ff1a3c" stroke-width="0.5" stroke-dasharray="4,4"/>
+          <text x="2" y="9" font-family="Share Tech Mono,monospace" font-size="6" fill="#ff1a3c">120°C TRIP</text>
+          <!-- Warning line at 85°C -->
+          <line x1="0" y1="27" x2="400" y2="27" stroke="#ffd600" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <text x="2" y="32" font-family="Share Tech Mono,monospace" font-size="6" fill="#ffd600">85°C ADV</text>
+          <!-- Trend polyline -->
+          <polyline id="trend-line" points="" fill="none" stroke="#00ff9d" stroke-width="1.5"/>
+          <!-- Current value marker -->
+          <circle id="trend-dot" cx="398" cy="35" r="2.5" fill="#00ff9d"/>
+        </svg>
+      </div>
+
+      <!-- ── ALARM PANEL ── -->
+      <div style="background:#080e1e;border:1px solid var(--border2);border-radius:3px;padding:4px;margin-bottom:5px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+          <span style="font-family:var(--mono);font-size:7px;color:var(--yellow);letter-spacing:1px;">&#9888; ALARM MANAGEMENT — SE-Grid-07</span>
+          <span class="al-count" id="al-count" style="font-family:var(--mono);font-size:7px;color:var(--green);">0 ACTIVE</span>
+        </div>
+        <div id="alarm-list" style="font-family:var(--mono);font-size:7px;line-height:1.8;max-height:52px;overflow-y:auto;">
+          <div style="color:var(--dim);">No active alarms</div>
+        </div>
+      </div>
+
+      <!-- ── NIS2 COMPLIANCE ── -->
+      <div class="slabel">NIS2 2022/2555 &amp; CYBERSECURITY ACT 2025:1506</div>
+      <div class="reg-grid">
+        <div class="reg-row"><span class="reg-key">NIS2 Art.21 — Risk Management</span><span class="reg-v c-ok" id="r-nis2">COMPLIANT</span></div>
+        <div class="reg-row"><span class="reg-key">Cybersecurity Act 2025:1506</span><span class="reg-v c-ok" id="r-cyber">COMPLIANT</span></div>
+        <div class="reg-row"><span class="reg-key">MSB Notification Required</span><span class="reg-v c-ok" id="r-msb">NO</span></div>
+        <div class="reg-row"><span class="reg-key">Incident Response Triggered</span><span class="reg-v c-ok" id="r-ir">NOT TRIGGERED</span></div>
+        <div class="reg-row"><span class="reg-key">Totalförsvaret Grid Status</span><span class="reg-v c-ok" id="r-tot">OPERATIONAL</span></div>
+        <div class="reg-row"><span class="reg-key">Operator Situational Awareness</span><span class="reg-v c-ok" id="r-sa">INTACT (WAI=WAD)</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM LEFT: LOG -->  <!-- BOTTOM LEFT: LOG -->
+  <div class="panel plog">
+    <div class="ph" style="padding:5px 9px;"><div class="pt" style="color:var(--yellow);">REAL-TIME EVENT LOG</div></div>
+    <div style="flex:1;padding:5px 9px;overflow:hidden;">
+      <div class="log-wrap" id="event-log"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM RIGHT: REFERENCES -->
+  <div class="panel pref">
+    <div class="ph" style="padding:5px 9px;"><div class="pt" style="color:var(--accent);">SCIENTIFIC BASIS</div></div>
+    <div style="flex:1;padding:5px 9px;overflow:hidden;">
+      <div class="ref-panel">
+        <div class="ref-row"><span class="ref-src">IEC 60076-7</span><span class="ref-text">θHS=θA+Δθoil+H·Δθwinding; H=1.3; τoil=90min OFAF</span></div>
+        <div class="ref-row"><span class="ref-src">IEC 60076-7</span><span class="ref-text">Ageing: V=e^((θHS-98)/6); life halves per 6°C rise</span></div>
+        <div class="ref-row"><span class="ref-src">MITRE T0832</span><span class="ref-text">Manipulation of View: spoofed HMI registers via FC16</span></div>
+        <div class="ref-row"><span class="ref-src">MITRE T0855</span><span class="ref-text">Unauthorized Command: coil writes via FC15 — no auth</span></div>
+        <div class="ref-row"><span class="ref-src">Hollnagel</span><span class="ref-text">WAD≠WAI: operator acts on imagined, not physical reality</span></div>
+        <div class="ref-row"><span class="ref-src">FrostyGoop</span><span class="ref-text">Modbus → ENCO controllers; 600 buildings lost heat 2024</span></div>
+        <div class="ref-row"><span class="ref-src">Censys 2024</span><span class="ref-text">1,088,175 Modbus TCP devices exposed to internet</span></div>
+        <div class="ref-row"><span class="ref-src">NIS2 Art.21</span><span class="ref-text">"Appropriate measures" — ambiguous on Modbus auth (RQ2)</span></div>
+        <div class="ref-row"><span class="ref-src">Franke 2014</span><span class="ref-text">Cyber situational awareness gap in ICS operators</span></div>
+        <div class="ref-row"><span class="ref-src">Poland 2025</span><span class="ref-text">RTUs+relays destroyed; grid blind; same T0832+T0855 chain</span></div>
+        <div class="ref-row"><span class="ref-src" style="color:#ffd600;">v6 Upgrade</span><span class="ref-text" style="color:#ffd600;">T0855: gradual valve closure 15s (IEC/actuator data); T0832: drift attack not frozen (FrostyGoop realism)</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════
+// THREE.JS 3D SCENE
+// ═══════════════════════
+const canvas=document.getElementById('canvas3d');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x03060f);
+scene.fog=new THREE.Fog(0x03060f,14,32);
+const camera=new THREE.PerspectiveCamera(45,2,0.1,100);
+camera.position.set(6,4,8);camera.lookAt(0,0.5,0);
+scene.add(new THREE.AmbientLight(0x112233,0.8));
+const dl=new THREE.DirectionalLight(0x00c8ff,0.6);dl.position.set(5,8,5);dl.castShadow=true;scene.add(dl);
+const hl=new THREE.PointLight(0x00ff9d,0,5);hl.position.set(0,1,0);scene.add(hl);
+// RTU light (additional point light on PLC box)
+const rtuLight=new THREE.PointLight(0x00ff9d,0.8,2);rtuLight.position.set(-2.2,-0.8,0.8);scene.add(rtuLight);
+
+// Ground + grid
+const gnd=new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.MeshPhongMaterial({color:0x060a14}));
+gnd.rotation.x=-Math.PI/2;gnd.position.y=-1.5;gnd.receiveShadow=true;scene.add(gnd);
+// grid added below
+const gh=new THREE.GridHelper(16,16,0x0d1e3a,0x0a1625);gh.position.y=-1.49;scene.add(gh);
+
+// Transformer tank
+const tGeo=new THREE.BoxGeometry(2,2.5,1.2);
+const tMat=new THREE.MeshPhongMaterial({color:0x1a2a40,specular:0x00aaff,shininess:60});
+const tank=new THREE.Mesh(tGeo,tMat);tank.castShadow=true;scene.add(tank);
+const tankEdge=new THREE.LineSegments(new THREE.EdgesGeometry(tGeo),new THREE.LineBasicMaterial({color:0x00c8ff,transparent:true,opacity:0.3}));
+tank.add(tankEdge);
+
+// Radiators
+function makeRad(x){
+  const g=new THREE.Group();
+  const m=new THREE.MeshPhongMaterial({color:0x0d1e35,specular:0x004466,shininess:40});
+  const pm=new THREE.MeshPhongMaterial({color:0x0a1828});
+  for(let i=0;i<5;i++){const f=new THREE.Mesh(new THREE.BoxGeometry(0.06,1.8,1.0),m);f.position.set(x+(x>0?1:-1)*i*0.12,-0.1,0);g.add(f);}
+  const pg=new THREE.CylinderGeometry(0.04,0.04,Math.abs(x)*2+0.6,8);
+  const pt=new THREE.Mesh(pg,pm);pt.rotation.z=Math.PI/2;pt.position.set(x/2,0.85,0);g.add(pt);
+  const pb=new THREE.Mesh(pg,pm);pb.rotation.z=Math.PI/2;pb.position.set(x/2,-1.1,0);g.add(pb);
+  return g;
+}
+scene.add(makeRad(-1.8),makeRad(1.8));
+
+// Pump
+const pMat=new THREE.MeshPhongMaterial({color:0x0a1828,specular:0x002244,shininess:30});
+const pump=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,0.4,12),pMat);
+pump.position.set(0,-1.7,0.6);pump.castShadow=true;scene.add(pump);
+// actually add pumpPipe properly
+const pumpPipe=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.5,8),pMat);
+pumpPipe.position.set(0,-1.45,0.6);scene.add(pumpPipe);
+
+// Bushings
+function makeBush(x){
+  const g=new THREE.Group();
+  const m=new THREE.MeshPhongMaterial({color:0xc8d8e8,specular:0xffffff,shininess:100});
+  const s=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.06,0.8,12),m);s.position.set(x,1.65,0);g.add(s);
+  [0.2,0.5,0.7].forEach(y=>{const d=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.04,12),m);d.position.set(x,1.25+y,0);g.add(d);});
+  return g;
+}
+scene.add(makeBush(-0.5),makeBush(0),makeBush(0.5));
+
+// Valves
+const vGeo=new THREE.SphereGeometry(0.1,8,8);
+const vGM=new THREE.MeshPhongMaterial({color:0x00ff9d,emissive:0x004422});
+const vInlet=new THREE.Mesh(vGeo,vGM.clone());vInlet.position.set(-1.2,-0.8,0);scene.add(vInlet);
+const vOutlet=new THREE.Mesh(vGeo,vGM.clone());vOutlet.position.set(1.2,-0.8,0);scene.add(vOutlet);
+const vPump=new THREE.Mesh(vGeo,vGM.clone());vPump.position.set(0,-1.3,0.6);scene.add(vPump);
+
+// ═══ RTU/PLC BOX — Large and clearly visible ═══
+const rtuGeo=new THREE.BoxGeometry(0.7,0.9,0.4);
+const rtuMat=new THREE.MeshPhongMaterial({color:0x0a1e35,specular:0x00c8ff,shininess:90,emissive:0x001122});
+const rtuBox=new THREE.Mesh(rtuGeo,rtuMat);
+rtuBox.position.set(-2.2,-0.4,0.8);
+rtuBox.castShadow=true;
+scene.add(rtuBox);
+
+// RTU edge highlight — bright cyan frame
+const rtuEdge=new THREE.LineSegments(
+  new THREE.EdgesGeometry(rtuGeo),
+  new THREE.LineBasicMaterial({color:0x00c8ff,transparent:true,opacity:0.9})
+);
+rtuBox.add(rtuEdge);
+
+// RTU screen (small rectangle on front face)
+const screenGeo=new THREE.PlaneGeometry(0.4,0.25);
+const screenMat=new THREE.MeshBasicMaterial({color:0x003344});
+const screen=new THREE.Mesh(screenGeo,screenMat);
+screen.position.set(0,0.1,0.21);
+rtuBox.add(screen);
+
+// Screen status indicator (green dot)
+const dotGeo=new THREE.CircleGeometry(0.04,8);
+const dotMat=new THREE.MeshBasicMaterial({color:0x00ff9d});
+const dot=new THREE.Mesh(dotGeo,dotMat);
+dot.position.set(0,-0.2,0.21);
+rtuBox.add(dot);
+
+// RTU label background
+const labelGeo=new THREE.PlaneGeometry(0.6,0.12);
+const labelMat=new THREE.MeshBasicMaterial({color:0x00aacc,transparent:true,opacity:0.15});
+const labelPlane=new THREE.Mesh(labelGeo,labelMat);
+labelPlane.position.set(0,0.38,0.21);
+rtuBox.add(labelPlane);
+
+// Conduit wire from RTU to transformer
+const cPts=[new THREE.Vector3(-1.85,-0.4,0.8),new THREE.Vector3(-1.1,-0.6,0.2)];
+const cCurve=new THREE.CatmullRomCurve3(cPts);
+const conduit=new THREE.Mesh(
+  new THREE.TubeGeometry(cCurve,8,0.025,6,false),
+  new THREE.MeshBasicMaterial({color:0x003366})
+);
+scene.add(conduit);
+
+// Conduit to pump
+const cPts2=[new THREE.Vector3(-1.85,-0.7,0.8),new THREE.Vector3(-0.3,-1.5,0.7)];
+const cCurve2=new THREE.CatmullRomCurve3(cPts2);
+const conduit2=new THREE.Mesh(
+  new THREE.TubeGeometry(cCurve2,8,0.025,6,false),
+  new THREE.MeshBasicMaterial({color:0x003366})
+);
+scene.add(conduit2);
+
+// Attack effect — red pulse sphere around RTU when attacked
+const rtuAttackGeo=new THREE.SphereGeometry(0.7,16,16);
+const rtuAttackMat=new THREE.MeshBasicMaterial({color:0xff1a3c,transparent:true,opacity:0,side:THREE.BackSide});
+const rtuAttackGlow=new THREE.Mesh(rtuAttackGeo,rtuAttackMat);
+rtuBox.add(rtuAttackGlow);
+
+// Heat glow on transformer
+const hGlowMat=new THREE.MeshBasicMaterial({color:0xff1a3c,transparent:true,opacity:0,side:THREE.BackSide});
+const hGlow=new THREE.Mesh(new THREE.SphereGeometry(1.8,16,16),hGlowMat);
+scene.add(hGlow);
+
+// Particles
+const PC=80,pGeo=new THREE.BufferGeometry(),pPos=new Float32Array(PC*3),pData=[];
+for(let i=0;i<PC;i++){
+  pPos[i*3]=(Math.random()-.5)*.6;pPos[i*3+1]=1.3+Math.random()*2;pPos[i*3+2]=(Math.random()-.5)*.4;
+  pData.push({vx:(Math.random()-.5)*.02,vy:.02+Math.random()*.03,vz:(Math.random()-.5)*.01,life:Math.random()});
+}
+pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+const pMaterial=new THREE.PointsMaterial({color:0x00ff9d,size:0.05,transparent:true,opacity:0});
+const particles=new THREE.Points(pGeo,pMaterial);scene.add(particles);
+
+function resizeCanvas(){
+  const w=canvas.clientWidth,h=canvas.clientHeight;
+  if(canvas.width!==w||canvas.height!==h){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+}
+
+// ═══════════════════════════════════════════════════════════
+// SIMULATION STATE — v6 UPGRADE
+// ═══════════════════════════════════════════════════════════
+const AMBIENT=22,RATED=250,LOAD=180,K=LOAD/RATED;
+const OIL_RATED=42,WIND_RATED=29,H=1.3,N=0.9,M=1.0,TAU_OIL=90,TAU_WIND=7,THETA_REF=98;
+const ADV=85,WARN=95,CRIT=110,TRIP=120;
+
+// ── T0855 Gradual process constants ──────────────────────────────
+// Motorized OFAF valve: 30 ticks = 15s (realistic for 6" industrial spring-return actuator)
+// Ref: 600Nm electric actuator = 45s full stroke; spring-return faster at ~15-20s
+const VALVE_CLOSE_TICKS = 30;   // ticks to fully close valves (15 real seconds)
+const PUMP_COAST_TAU    = 10;   // exponential coast-down time constant (ticks ≈ 5s)
+
+// ── T0832 Realistic drift constants ──────────────────────────────
+// Sophisticated attack: inject slowly drifting plausible values, not frozen static
+// Ref: FrostyGoop caused "inaccurate measurements", not just frozen data (SANS, 2024)
+const SPOOF_NOISE_WT  = 0.7;    // °C sensor noise amplitude (realistic RTD noise)
+const SPOOF_NOISE_OT  = 0.5;    // °C oil temp noise
+const SPOOF_NOISE_RPM = 18;     // RPM tachometer noise
+const SPOOF_NOISE_FL  = 6;      // L/min flow noise
+const SPOOF_DRIFT_RATE = 0.04;  // °C per tick slow drift — makes temp look like it is naturally cooling
+
+let state={
+  pump_rpm:1450,flow:840,oil_temp:68,winding_temp:74,oil_pressure:2600,
+  load_mva:180,voltage_kv:400,
+  inlet:true,outlet:true,pump_on:true,
+  cooling_active:true,tripped:false,alarm:0,
+  aging_rate:1.0,aging_lol:0.0,
+  // v6 new: gradual valve position (1.0=open, 0.0=closed)
+  valve_position:1.0,
+  // v6 new: pump coast-down tracking
+  pump_coasting:false
+};
+
+// Spoof state — captured at T0832 activation, then drifts realistically
+let spoofBase = {winding_temp:74.0,oil_temp:68.0,pump_rpm:1450,flow:840,oil_pressure:2600};
+let spoofTick = 0;
+
+// Attack flags
+let blindActive=false, strikeActive=false, tick=0;
+
+// ── Compute realistic spoofed values (T0832) ─────────────────────
+function getSpoofed(){
+  spoofTick++;
+  // Phase 1 (ticks 0-15): Temperature SLOWLY drops ~0.6°C — looks like natural load reduction
+  // Phase 2 (ticks 16+): Stabilises with realistic sensor noise
+  // This is MORE deceptive than a frozen value: operator sees "live" believable data
+  const driftWT  = -Math.min(spoofTick * SPOOF_DRIFT_RATE, 0.6);
+  const driftOT  = driftWT * 0.6;
+  return {
+    winding_temp : spoofBase.winding_temp + driftWT + (Math.random()-0.5)*SPOOF_NOISE_WT,
+    oil_temp     : spoofBase.oil_temp     + driftOT + (Math.random()-0.5)*SPOOF_NOISE_OT,
+    pump_rpm     : spoofBase.pump_rpm              + (Math.random()-0.5)*SPOOF_NOISE_RPM,
+    flow         : spoofBase.flow                  + (Math.random()-0.5)*SPOOF_NOISE_FL,
+    oil_pressure : spoofBase.oil_pressure + Math.sin(spoofTick/9)*12,
+    load_mva     : 180 + Math.sin(spoofTick/13)*1.8
+  };
+}
+
+// ── IEC 60076-7 Physics Engine (iecTick) ─────────────────────────
+function iecTick(dt){
+  if(state.tripped)return;
+
+  // ── T0855 gradual valve closure ──────────────────────────────
+  if(strikeActive){
+    // Close valves at constant rate (30 ticks = 15 seconds)
+    state.valve_position = Math.max(0, state.valve_position - 1/VALVE_CLOSE_TICKS);
+
+    // Pump speed: proportional while valves closing, then exponential coast-down
+    if(state.valve_position > 0.01){
+      // Pump still running but flow is throttled by valve position
+      // RPM drops proportionally to valve opening (affinity laws)
+      const targetRPM = 1450 * Math.sqrt(state.valve_position);
+      state.pump_rpm = Math.max(0, state.pump_rpm - (state.pump_rpm - targetRPM) * 0.15);
+      state.pump_coasting = false;
+    } else {
+      // Valves fully closed — pump coasts to stop (exponential decay, ~5-6 seconds)
+      state.pump_rpm = Math.max(0, state.pump_rpm * Math.exp(-1/PUMP_COAST_TAU));
+      state.pump_coasting = true;
+    }
+
+    // Flow proportional to valve position squared (throttling characteristic)
+    state.flow = Math.max(0, 840 * Math.pow(state.valve_position, 1.8));
+
+    // Oil pressure: centrifugal affinity law (H ∝ N²) BUT with check valve
+    // floor. Real OFAF circuits have a check valve and accumulator that
+    // maintain minimum 1200 kPa even during pump deceleration. Pressure
+    // only drops to zero after full pump stop + circuit drain (~5-10 ticks).
+    // This prevents false PT-01 alarms during gradual valve closure.
+    const pumpPressure = 2600 * Math.pow(state.pump_rpm/1450, 2);
+    const checkValveFloor = state.pump_rpm > 50 ? 1200 : 200;
+    state.oil_pressure = Math.max(checkValveFloor, pumpPressure);
+
+    // Update logical coil states for display
+    state.inlet  = state.valve_position > 0.05;
+    state.outlet = state.valve_position > 0.05;
+    state.pump_on= state.pump_rpm > 50;
+  } else if(!strikeActive && state.valve_position < 1.0){
+    // Recovery when T0855 stopped: valves re-open gradually
+    state.valve_position = Math.min(1.0, state.valve_position + 1/VALVE_CLOSE_TICKS);
+    state.pump_rpm = Math.min(1450, state.pump_rpm + 60);
+    state.flow = Math.max(0, 840 * Math.pow(state.valve_position, 1.8));
+    state.oil_pressure = Math.max(200, 2600 * Math.pow(state.pump_rpm/1450, 2));
+    state.inlet  = state.valve_position > 0.05;
+    state.outlet = state.valve_position > 0.05;
+    state.pump_on= state.pump_rpm > 50;
+  }
+
+  // ── IEC 60076-7 thermal model ────────────────────────────────
+  // Cooling effectiveness scales with flow ratio (not binary on/off)
+  const flowRatio = state.flow / 840;  // 0 = no cooling, 1 = full OFAF cooling
+  const cool = flowRatio > 0.05;
+
+  if(cool){
+    // Partial cooling: steady-state temperatures scale with reduced flow
+    // OFAF: without forced oil flow, cooling drops significantly
+    // At 50% flow: cooling capacity ≈ 60% (non-linear due to heat transfer coefficient)
+    const coolingFactor = Math.pow(flowRatio, 0.6);
+    const oss = AMBIENT + OIL_RATED  * Math.pow(K, 2*N)  / coolingFactor;
+    const wss = oss     + H * WIND_RATED * Math.pow(K, 2*M) / coolingFactor;
+    state.oil_temp     += (oss - state.oil_temp)     * (1 - Math.exp(-dt * coolingFactor / TAU_OIL));
+    state.winding_temp += (wss - state.winding_temp) * (1 - Math.exp(-dt * coolingFactor / TAU_WIND));
+    state.cooling_active = true;
+    state.tripped = false;
+    // Realistic load fluctuation
+    state.voltage_kv = 400 + Math.sin(tick/11)*0.3;
+    state.load_mva   = 180 + Math.sin(tick/13)*2;
+  } else {
+    // No cooling: thermal runaway per IEC 60076-7
+    const hr = 1.8 * Math.pow(K, 1.6);
+    state.oil_temp     = Math.min(155, state.oil_temp     + hr * 0.55 * dt);
+    state.winding_temp = Math.min(175, state.winding_temp + hr * dt);
+    state.cooling_active = false;
+    if(state.winding_temp >= TRIP){ state.tripped=true; state.load_mva=0; state.voltage_kv=0; }
+  }
+
+  // Add natural sensor noise to real readings (realistic IED behaviour)
+  state.winding_temp += (Math.random()-0.5)*0.15;
+  state.oil_temp     += (Math.random()-0.5)*0.10;
+  if(!strikeActive) state.oil_pressure = 2600 + Math.sin(tick/8)*15;
+
+  state.aging_rate = Math.exp((state.winding_temp - THETA_REF) / 6);
+  state.aging_lol += state.aging_rate * (dt / 60);
+
+  const wt = state.winding_temp;
+  if(wt>=TRIP)state.alarm=4;
+  else if(wt>=CRIT)state.alarm=3;
+  else if(wt>=WARN)state.alarm=2;
+  else if(wt>=ADV)state.alarm=1;
+  else state.alarm=0;
+}
+
+// ═══════════════════════
+// 3D UPDATE
+// ═══════════════════════
+function update3D(t){
+  const al=state.alarm;
+  const hf=Math.max(0,(state.winding_temp-ADV)/(TRIP-ADV));
+
+  // Transformer heat glow
+  hGlowMat.opacity=hf*0.12;
+  hl.intensity=hf*1.5;hl.color.setHSL(al>=3?0.0:0.08,1,0.5);
+
+  // Tank edge color
+  const em=tank.children[0].material;
+  if(al===0)em.color.set(0x00c8ff);else if(al===1)em.color.set(0xffd600);else if(al===2)em.color.set(0xff7700);else em.color.set(0xff1a3c);
+
+  // RTU box — green normal, yellow T0832, red T0855, bright red both
+  const rtuCompromised=blindActive||strikeActive;
+  rtuMat.emissive.setHex(strikeActive&&blindActive?0x220800:strikeActive?0x1a0400:blindActive?0x001122:0x001122);
+  rtuEdge.material.color.set(strikeActive?0xff1a3c:blindActive?0xffd600:0x00c8ff);
+  rtuEdge.material.opacity=rtuCompromised?1.0:0.9;
+  dotMat.color.set(strikeActive?0xff1a3c:blindActive?0xffd600:0x00ff9d);
+  rtuAttackMat.opacity=rtuCompromised?0.08+Math.sin(t*4)*0.04:0;
+  rtuAttackMat.color.set(strikeActive?0xff1a3c:0xffd600);
+  rtuLight.color.set(strikeActive?0xff1a3c:blindActive?0xffd600:0x00ff9d);
+  rtuLight.intensity=rtuCompromised?1.5:0.8;
+
+  // RTU box pulse when attacked
+  const rtuScale=rtuCompromised?1+Math.sin(t*6)*0.03:1;
+  rtuBox.scale.setScalar(rtuScale);
+
+  // Valve colors
+  vInlet.material.color.set(state.inlet?0x00ff9d:0xff1a3c);
+  vOutlet.material.color.set(state.outlet?0x00ff9d:0xff1a3c);
+  vPump.material.color.set(state.pump_on?0x00ff9d:0xff1a3c);
+  vInlet.material.emissive.set(state.inlet?0x003322:0x220008);
+  vOutlet.material.emissive.set(state.outlet?0x003322:0x220008);
+  vPump.material.emissive.set(state.pump_on?0x003322:0x220008);
+
+  // Conduit color — red when attack active
+  conduit.material.color.set(strikeActive?0xff1a3c:blindActive?0xffd600:0x003366);
+  conduit2.material.color.set(strikeActive?0xff1a3c:0x003366);
+
+  // Particles
+  pMaterial.opacity=state.tripped?hf*0.6:(state.cooling_active?0.35:0.05);
+  pMaterial.color.set(state.tripped?0xff4060:0x00ff9d);
+  for(let i=0;i<PC;i++){
+    const pd=pData[i];
+    pPos[i*3]+=pd.vx;pPos[i*3+1]+=pd.vy*(state.tripped?1.5:0.5);pPos[i*3+2]+=pd.vz;pd.life+=0.015;
+    if(pd.life>1||pPos[i*3+1]>5){pPos[i*3]=(Math.random()-.5)*0.5;pPos[i*3+1]=state.tripped?1.3:-0.5+Math.random()*0.5;pPos[i*3+2]=(Math.random()-.5)*0.3;pd.life=0;}
+  }
+  pGeo.attributes.position.needsUpdate=true;
+  pump.rotation.y=t*(state.pump_on?3:0);
+  const ca=t*0.12;
+  camera.position.x=Math.sin(ca)*9;camera.position.z=Math.cos(ca)*9;camera.lookAt(0,0.5,0);
+  if(state.tripped){tank.position.x=(Math.random()-.5)*0.02;tank.position.z=(Math.random()-.5)*0.02;}
+  else{tank.position.x=0;tank.position.z=0;}
+}
+
+// ═══════════════════════
+// UI RENDER
+// ═══════════════════════
+function cc(v,lo,mid,hi,inv){if(!inv)return v>=hi?'c-crit':v>=mid?'c-warn':v>=lo?'c-adv':'c-ok';else return v<=hi?'c-crit':v<=mid?'c-warn':v<=lo?'c-adv':'c-ok';}
+function cf(v,lo,mid,hi,inv){return cc(v,lo,mid,hi,inv).replace('c-','f-');}
+function sg(id,val,bid,pct,vc,fc,sid,st){
+  const e=document.getElementById(id);if(!e)return;e.textContent=val;e.className='g-val '+vc;
+  const b=document.getElementById(bid);if(b){b.style.width=Math.min(100,pct)+'%';b.className='g-bar '+fc;}
+  const s=document.getElementById(sid);if(s){s.textContent=st;s.className='g-stat '+vc;}
+}
+
+const ALARM_TX=[
+  '✓ ALL SYSTEMS NOMINAL — IEC 60076-7 WITHIN SAFE LIMITS',
+  '⚠ ADVISORY — Winding rising — IEC Level 1',
+  '⚠ WARNING — Cooling degraded — IEC Level 2',
+  '!! CRITICAL — Winding >110°C — IEC Level 3',
+  '!! THERMAL RELAY TRIPPED — BLACKOUT — IEC Level 4'
+];
+const ALARM_CL=['al-none','al-adv','al-warn','al-crit','al-trip'];
+
+function renderAll(){
+  const s=state;const al=s.alarm;
+
+  // Layer 1 Network
+  const atk=blindActive||strikeActive;
+  document.getElementById('net-st').textContent=atk?'UNDER ATTACK':'OPEN / UNPROTECTED';
+  document.getElementById('net-st').style.color=atk?'var(--red)':'var(--yellow)';
+  document.getElementById('net-log').style.color=atk?'var(--red)':'var(--dim)';
+  document.getElementById('net-log').textContent=
+    strikeActive&&blindActive?'FC15 coil write + FC16 register write active simultaneously':
+    strikeActive?'FC15 Write Multiple Coils [0,0,0] from attacker — PLC accepting without auth':
+    blindActive?'FC16 Write Holding Registers [740,680,14500,8400] — HMI poisoned':
+    'No unauthorized connections — port 502 open and waiting';
+
+  // Layer 2 RTU/PLC
+  const pb=document.getElementById('plc-badge-text');
+  if(pb){pb.textContent=strikeActive&&blindActive?'FULLY COMPROMISED':strikeActive?'COILS OVERWRITTEN':blindActive?'REGISTERS SPOOFED':'NORMAL';
+  pb.style.color=strikeActive?'var(--red)':blindActive?'var(--orange)':'var(--green)';}
+
+  // Coils
+  function setCoil(id,val){
+    const e=document.getElementById(id);if(!e)return;
+    e.textContent=val?'TRUE':'FALSE';e.className='coil-val '+(val?'cv-on':'cv-off');
+    e.closest('.coil').style.border=val?'1px solid var(--border)':'1px solid var(--red)';
+  }
+  setCoil('coil0',s.inlet);setCoil('coil1',s.outlet);setCoil('coil2',s.pump_on);
+
+  // Registers — show real or spoofed
+  const regWT=blindActive?740:Math.round(s.winding_temp*10);
+  const regOT=blindActive?680:Math.round(s.oil_temp*10);
+  const regRP=blindActive?14500:Math.round(s.pump_rpm*10);
+  const regFL=blindActive?8400:Math.round(s.flow*10);
+  const spoofed=blindActive&&s.alarm>0;
+  function setReg(id,val,spoofClass){
+    const e=document.getElementById(id);if(!e)return;
+    e.textContent=val;e.className='rt-val '+(spoofClass?'rv-spoofed':s.alarm>0&&!blindActive?'rv-crit':'rv-ok');
+  }
+  setReg('reg0',regWT+' → '+(regWT/10).toFixed(1)+'°C', spoofed);
+  setReg('reg1',regOT+' → '+(regOT/10).toFixed(1)+'°C', spoofed);
+  setReg('reg2',regRP+' → '+(regRP/10).toFixed(0)+' RPM', spoofed);
+  setReg('reg3',regFL+' → '+(regFL/10).toFixed(0)+' L/min', spoofed);
+
+  const pms=document.getElementById('plc-main-status');
+  if(pms){
+    if(strikeActive&&blindActive){pms.textContent='RTU BREACHED — T0855 coils forced FALSE + T0832 registers spoofed simultaneously';pms.className='plc-badge pb-bad';}
+    else if(strikeActive){pms.textContent='RTU BREACHED — T0855 forcing coils FALSE via Modbus FC15 — no auth required';pms.className='plc-badge pb-bad';}
+    else if(blindActive){pms.textContent='RTU REGISTERS SPOOFED — T0832 injecting frozen values via Modbus FC16 — HMI sees lies';pms.className='plc-badge pb-warn';}
+    else{pms.textContent='RTU/PLC INTEGRITY: NORMAL — No unauthorized Modbus commands detected';pms.className='plc-badge pb-ok';}
+  }
+
+  // Layer 3 Physical
+  const physL=document.getElementById('phys-layer');
+  if(physL)physL.className='lbox l-phys'+(al>0?' bad':'');
+  const pb2=document.getElementById('phys-badge');
+  if(pb2){pb2.textContent=al>=4?'BLACKOUT':al>=3?'CRITICAL':al>=2?'WARNING':al>=1?'ADVISORY':'NOMINAL';pb2.style.color=al>=3?'var(--red)':al>=1?'var(--yellow)':'var(--green)';}
+  const cn=document.getElementById('consequence-note');if(cn)cn.style.display=strikeActive?'block':'none';
+
+  // WAD alarm
+  const wa=document.getElementById('wad-alarm');if(wa){wa.className='alarm '+ALARM_CL[al];wa.textContent=ALARM_TX[al];}
+
+  // v6: Valve position gauge (0-100%)
+  const valvePct = Math.round(s.valve_position * 100);
+  sg('wad-valve',valvePct,'bar-valve',valvePct,
+    cc(valvePct,60,30,5,true),cf(valvePct,60,30,5,true),
+    'st-valve',
+    valvePct>95?'Coils 0+1=TRUE → valves OPEN':
+    valvePct>5?'T0855: valves CLOSING — '+valvePct+'% open':
+    'Coils 0+1=FALSE → valves FULLY CLOSED');
+  // v6: Pump gauge with coast-down state
+  sg('wad-pump',Math.round(s.pump_rpm),'bar-pump',s.pump_rpm/1450*100,
+    cc(s.pump_rpm,800,400,100,true),cf(s.pump_rpm,800,400,100,true),'st-pump',
+    s.pump_rpm>1300?'Coil 2=TRUE → pump running':
+    s.pump_rpm>800?'T0855: pump decelerating — valves throttling':
+    s.pump_rpm>50?'T0855: pump coasting to stop — valves closed':
+    'Pump STOPPED — zero cooling flow');
+  // v6: Flow gauge
+  sg('wad-flow',Math.round(s.flow),'bar-flow',s.flow/840*100,
+    cc(s.flow,200,100,50,true),cf(s.flow,200,100,50,true),'st-flow',
+    s.flow>750?'Coils 0+1=TRUE → valves open':
+    s.flow>50?'T0855: flow reducing — valve '+valvePct+'% open':
+    'Coils 0+1=FALSE → ZERO FLOW');
+  sg('wad-wtemp',s.winding_temp.toFixed(1),'bar-wtemp',s.winding_temp/TRIP*100,cc(s.winding_temp,ADV,WARN,CRIT),cf(s.winding_temp,ADV,WARN,CRIT),'st-wtemp',s.tripped?'!! IEC relay TRIPPED':'IEC 60076-7 hotspot (Trip@120°C)');
+  sg('wad-otemp',s.oil_temp.toFixed(1),'bar-otemp',s.oil_temp/TRIP*100,cc(s.oil_temp,ADV-5,WARN-5,CRIT-5),cf(s.oil_temp,ADV-5,WARN-5,CRIT-5),'st-otemp','OFAF τoil=90min IEC 60076-7');
+  sg('wad-pres',Math.round(s.oil_pressure),'bar-pres',Math.min(100,s.oil_pressure/3000*100),cc(s.oil_pressure,1500,800,400,true),cf(s.oil_pressure,1500,800,400,true),'st-pres',s.oil_pressure>1500?'Nominal system pressure':'LOW — cooling lost');
+  sg('wad-load',s.load_mva.toFixed(0),'bar-load',Math.min(100,s.load_mva/250*100),s.tripped?'c-crit':'c-ok',s.tripped?'f-crit':'f-ok','st-load',s.tripped?'TRIPPED — BLACKOUT':'K=0.72 load factor');
+
+  const ar=document.getElementById('aging-rate');if(ar){ar.textContent=s.aging_rate.toFixed(2)+'×';ar.className='age-val '+(s.aging_rate<2?'c-ok':s.aging_rate<8?'c-warn':'c-crit');}
+  const al2=document.getElementById('aging-lol');if(al2){al2.textContent=s.aging_lol.toFixed(3)+' h';al2.className='age-val '+(s.aging_lol<0.01?'c-ok':s.aging_lol<0.1?'c-warn':'c-crit');}
+
+  // WAI HMI — v6: use realistic drifting spoofed values (not static frozen)
+  const d = blindActive ? getSpoofed() : s;
+  const real_bad = s.alarm>0 || s.tripped || s.pump_rpm<10 || s.flow<10 || !s.inlet || !s.outlet || !s.pump_on;
+  // v6 FIX: operator is always deceived when T0832 active
+  const lying = blindActive;
+  document.getElementById('frozen-banner').className='frozen'+(blindActive?' show':'');
+  const ha=document.getElementById('hmi-alarm');
+  if(ha){
+    if(lying){
+      ha.className='alarm al-none';
+      ha.textContent='✓ ALL SYSTEMS NOMINAL — SUBSTATION FULLY OPERATIONAL';
+    } else if(!blindActive && s.tripped){
+      ha.className='alarm al-trip';
+      ha.textContent='!! THERMAL RELAY TRIPPED — BLACKOUT — TOTALFORSVARET DEGRADED';
+    } else if(!blindActive && s.alarm>=3){
+      ha.className='alarm al-crit';
+      ha.textContent='!! CRITICAL — Winding temp '+s.winding_temp.toFixed(1)+'°C — IMMEDIATE ACTION REQUIRED';
+    } else if(!blindActive && s.alarm>=2){
+      ha.className='alarm al-warn';
+      ha.textContent='⚠ WARNING — Cooling degraded — Winding '+s.winding_temp.toFixed(1)+'°C — Check equipment';
+    } else if(!blindActive && s.alarm>=1){
+      ha.className='alarm al-adv';
+      ha.textContent='⚠ ADVISORY — Temperature rising — Winding '+s.winding_temp.toFixed(1)+'°C';
+    } else if(!blindActive && (s.pump_rpm<10 || s.flow<10)){
+      ha.className='alarm al-crit';
+      ha.textContent='!! COOLING SYSTEM FAILURE — Pump STOPPED, Flow ZERO — INCIDENT RESPONSE REQUIRED';
+    } else {
+      ha.className='alarm al-none';
+      ha.textContent='✓ ALL SYSTEMS NOMINAL — SUBSTATION FULLY OPERATIONAL';
+    }
+  }
+
+  // When blind is active: always show green (frozen). When not blind: show real alarm colors
+  const hmi_vc = (val, lo, mid, hi, inv) => blindActive ? 'c-ok' : cc(val,lo,mid,hi,inv);
+  const hmi_fc = (val, lo, mid, hi, inv) => blindActive ? 'f-ok' : cf(val,lo,mid,hi,inv);
+  const ok='c-ok',fo='f-ok';
+  sg('hmi-pump',Math.round(d.pump_rpm),'hmi-bar-pump',blindActive?100:d.pump_rpm/1450*100,hmi_vc(d.pump_rpm,800,400,100,true),hmi_fc(d.pump_rpm,800,400,100,true),'hmi-st-pump','■ From RTU Reg 2 '+(lying?'[SPOOFED — real='+Math.round(s.pump_rpm)+' RPM]':(!blindActive&&s.pump_rpm<10?'[FAULT — PUMP STOPPED]':'[NORMAL]')));
+  sg('hmi-flow',Math.round(d.flow),'hmi-bar-flow',blindActive?100:d.flow/840*100,hmi_vc(d.flow,200,100,50,true),hmi_fc(d.flow,200,100,50,true),'hmi-st-flow','■ From RTU Reg 3 '+(lying?'[SPOOFED — real='+Math.round(s.flow)+']':(!blindActive&&s.flow<10?'[FAULT — ZERO FLOW]':'[NORMAL]')));
+  sg('hmi-wtemp',d.winding_temp.toFixed(1),'hmi-bar-wtemp',Math.round(d.winding_temp/TRIP*100),hmi_vc(d.winding_temp,ADV,WARN,CRIT),hmi_fc(d.winding_temp,ADV,WARN,CRIT),'hmi-st-wtemp','■ From RTU Reg 0 '+(lying?'[SPOOFED — real='+s.winding_temp.toFixed(1)+'°C]':(!blindActive&&s.alarm>0?'[ALARM '+s.winding_temp.toFixed(1)+'°C]':'[NORMAL]')));
+  sg('hmi-otemp',d.oil_temp.toFixed(1),'hmi-bar-otemp',Math.round(d.oil_temp/TRIP*100),hmi_vc(d.oil_temp,ADV-5,WARN-5,CRIT-5),hmi_fc(d.oil_temp,ADV-5,WARN-5,CRIT-5),'hmi-st-otemp','■ From RTU Reg 1 '+(lying?'[SPOOFED — real='+s.oil_temp.toFixed(1)+'°C]':(!blindActive&&s.alarm>0?'[ALARM '+s.oil_temp.toFixed(1)+'°C]':'[NORMAL]')));
+  sg('hmi-pres',Math.round(d.oil_pressure||2600),'hmi-bar-pres',87,ok,fo,'hmi-st-pres2','');
+  sg('hmi-load',(d.load_mva||180).toFixed(0),'hmi-bar-load',72,ok,fo,'hmi-st-load2','');
+
+  function sR(id,txt,c){const e=document.getElementById(id);if(e){e.textContent=txt;e.className='reg-v '+(c||'c-ok');}}
+  if(lying){
+    sR('r-nis2','COMPLIANT');sR('r-cyber','COMPLIANT');
+    sR('r-msb','NO — No incident detected');sR('r-ir','NOT TRIGGERED');
+    sR('r-tot','OPERATIONAL');sR('r-sa','INTACT ← LIE (T0832 active)','c-ok');
+  } else if(!blindActive && (s.tripped||s.pump_rpm<10)){
+    sR('r-nis2','BREACH DETECTED','c-crit');sR('r-cyber','INCIDENT ACTIVE','c-crit');
+    sR('r-msb','YES — Report within 24h','c-crit');sR('r-ir','TRIGGERED','c-crit');
+    sR('r-tot','DEGRADED','c-crit');sR('r-sa','ALERT — Cooling system failure','c-crit');
+  } else if(!blindActive && real_bad){
+    sR('r-nis2','BREACH DETECTED','c-crit');sR('r-cyber','INCIDENT ACTIVE','c-crit');
+    sR('r-msb','YES — Report within 24h','c-crit');sR('r-ir','TRIGGERED','c-crit');
+    sR('r-tot','DEGRADED','c-crit');sR('r-sa','ALERT — WAI≠WAD','c-crit');
+  }
+  else{sR('r-nis2','COMPLIANT');sR('r-cyber','COMPLIANT');sR('r-msb','NO — No incident detected');sR('r-ir','NOT TRIGGERED');sR('r-tot','OPERATIONAL');sR('r-sa','INTACT (WAI=WAD)');}
+
+  const badge=document.getElementById('nis2badge');
+  if(lying){badge.className='nis2 breach';badge.textContent='NIS2 GAP PROVEN';}
+  else if(!blindActive&&real_bad){badge.className='nis2 breach';badge.textContent='NIS2 BREACH';}
+  else{badge.className='nis2';badge.textContent='NIS2 COMPLIANT';}
+
+  // Gap
+  const gb=document.getElementById('gap-box');
+  const gap=blindActive&&real_bad;
+  if(gb){
+    if(gap){gb.className='gap-box al-trip';gb.innerHTML='!! RESILIENCE GAP (Hollnagel WAD≠WAI)<br>RTU coils=FALSE → Transformer '+s.winding_temp.toFixed(1)+'°C<br>HMI: 74.0°C NORMAL — NIS2 response: PARALYSED';}
+    else if(atk){gb.className='gap-box al-adv';gb.innerHTML='Attack active — run both T0832+T0855 together to prove gap';}
+    else{gb.className='gap-box al-none';gb.innerHTML='WAD=WAI — No gap — Hollnagel: aligned';}
+  }
+
+  document.getElementById('ph1').className='tl-i'+(blindActive?' tl-done':'');
+  document.getElementById('ph2').className='tl-i'+(strikeActive?' tl-done':'');
+  document.getElementById('ph3').className='tl-i'+(gap?' tl-active':'');
+}
+
+// LOG
+let lastAl=-1;
+function logEvent(msg,type){
+  const log=document.getElementById('event-log');
+  const now=new Date().toLocaleTimeString('sv-SE',{hour12:false});
+  const d=document.createElement('div');d.className='log-row';
+  d.innerHTML='<span class="log-t">'+now+'</span><span class="log-'+(type||'info')+'">'+msg+'</span>';
+  log.insertBefore(d,log.firstChild);while(log.children.length>16)log.removeChild(log.lastChild);
+}
+function checkAlarmLog(){
+  if(state.alarm!==lastAl){
+    const m=[null,
+      'RTU consequence: winding '+state.winding_temp.toFixed(1)+'°C — IEC ageing ×'+state.aging_rate.toFixed(2),
+      'RTU consequence: winding '+state.winding_temp.toFixed(1)+'°C — cooling lost',
+      'RTU consequence: winding '+state.winding_temp.toFixed(1)+'°C — trip imminent',
+      'IEC relay TRIPPED at '+state.winding_temp.toFixed(1)+'°C — BLACKOUT — consequence of T0855 PLC attack'];
+    const tp=[null,'warn','warn','alert','alert'];
+    if(m[state.alarm])logEvent(m[state.alarm],tp[state.alarm]);lastAl=state.alarm;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ATTACK CONTROLS — v6 UPGRADE
+// ═══════════════════════════════════════════════════════════
+
+function startBlind(){
+  blindActive = true;
+  // Capture current real values as spoofing baseline
+  spoofBase = {
+    winding_temp : state.winding_temp,
+    oil_temp     : state.oil_temp,
+    pump_rpm     : state.pump_rpm,
+    flow         : state.flow,
+    oil_pressure : state.oil_pressure
+  };
+  spoofTick = 0;
+  document.getElementById('btn-b1').style.display='none';
+  document.getElementById('btn-b0').style.display='block';
+  document.getElementById('btn-b1').classList.add('active');
+  document.getElementById('st-blind').className='atk-st st-on';
+  document.getElementById('st-blind').textContent='ACTIVE — FC16 injecting realistic drift values';
+  document.getElementById('ph1').className='tl-i tl-active';
+  logEvent('T0832 LAUNCHED — Modbus FC16 Write Holding Regs — no auth required','alert');
+  logEvent('v6: Injecting drifting plausible values (not frozen) — operator sees live-looking lies','warn');
+  logEvent('Spoofed baseline captured: '+spoofBase.winding_temp.toFixed(1)+'°C — will drift -0.6°C over 7.5s to appear as natural load drop','alert');
+  logEvent('Operator situational awareness NEUTRALIZED — Hollnagel WAD≠WAI begins','alert');
+}
+
+function stopBlind(){
+  blindActive = false;
+  document.getElementById('btn-b1').style.display='block';
+  document.getElementById('btn-b0').style.display='none';
+  document.getElementById('btn-b1').classList.remove('active');
+  document.getElementById('st-blind').className='atk-st st-idle';
+  document.getElementById('st-blind').textContent='IDLE — Registers showing real values';
+  logEvent('T0832 stopped — RTU registers restored — HMI sees real data','ok');
+}
+
+function startStrike(){
+  strikeActive = true;
+  // v6: DO NOT instantly set inlet/outlet/pump_on=false
+  // The gradual process is handled in iecTick() via valve_position
+  document.getElementById('btn-s1').style.display='none';
+  document.getElementById('btn-s0').style.display='block';
+  document.getElementById('btn-s1').classList.add('active');
+  document.getElementById('st-strike').className='atk-st st-on';
+  document.getElementById('st-strike').textContent='ACTIVE — FC15 sent — valves closing (15s)';
+  document.getElementById('ph2').className='tl-i tl-active';
+  logEvent('T0855 LAUNCHED — Modbus FC15 Write Coils [FALSE,FALSE,FALSE] — no auth','alert');
+  logEvent('v6: GRADUAL PROCESS — RTU coil signals cut — motorized valve closure beginning (~15s)','warn');
+  logEvent('Pump will decelerate as valves throttle, then coast-down to zero over ~5s','warn');
+  logEvent('IEC 60076-7: K='+K.toFixed(2)+' — thermal runaway begins once flow drops below 5%','warn');
+}
+
+function stopStrike(){
+  strikeActive = false;
+  // valves will re-open gradually in iecTick()
+  document.getElementById('btn-s1').style.display='block';
+  document.getElementById('btn-s0').style.display='none';
+  document.getElementById('btn-s1').classList.remove('active');
+  document.getElementById('st-strike').className='atk-st st-idle';
+  document.getElementById('st-strike').textContent='IDLE — Coils outputting normally — valves re-opening';
+  logEvent('T0855 stopped — RTU coils released — valves re-opening gradually','ok');
+}
+
+function resetAll(){
+  stopBlind(); stopStrike();
+  state = {
+    pump_rpm:1450, flow:840, oil_temp:68, winding_temp:74, oil_pressure:2600,
+    load_mva:180, voltage_kv:400,
+    inlet:true, outlet:true, pump_on:true,
+    cooling_active:true, tripped:false, alarm:0,
+    aging_rate:1.0, aging_lol:0.0,
+    valve_position:1.0, pump_coasting:false
+  };
+  spoofBase = {winding_temp:74.0,oil_temp:68.0,pump_rpm:1450,flow:840,oil_pressure:2600};
+  spoofTick = 0;
+  tick = 0; lastAl = -1;
+  ['ph1','ph2','ph3'].forEach(id=>document.getElementById(id).className='tl-i');
+  document.getElementById('nis2badge').className='nis2';
+  document.getElementById('nis2badge').textContent='NIS2 COMPLIANT';
+  logEvent('Simulation reset — IEC 60076-7 OFAF baseline restored','ok');
+}
+
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').innerHTML=n.toLocaleTimeString('sv-SE',{hour12:false})+'<br>'+n.toLocaleDateString('sv-SE')+' CET';
+}
+setInterval(updateClock,1000);updateClock();
+
+// ═══════════════════════
+// MIMIC DIAGRAM + TREND UPDATE
+// ═══════════════════════
+const trendData = [];
+const TREND_MAX = 60;
+let pumpAngle = 0;
+let alarmHistory = [];
+
+function updateMimic() {
+  const d = blindActive ? getSpoofed() : state;
+  const s = state;
+  // v6 FIX: when T0832 active, operator is ALWAYS deceived regardless
+  // of whether a physical crisis has started yet. Gradual T0855 process
+  // means the pump may be at 800 RPM (not zero) when T0832 is active —
+  // but the spoofed registers still show 1450 RPM, so no condition fires.
+  const lying = blindActive;
+  const green = '#00ff9d', red = '#ff1a3c', yellow = '#ffd600', gray = '#2a4060';
+
+  // Valve color helper
+  function valveColor(open) { return lying ? green : open ? green : red; }
+  function pipeColor(flowing) { return lying ? green : flowing ? green : gray; }
+
+  // ── VALVE SYMBOLS ──
+  // V-01 Inlet
+  const v01 = document.querySelectorAll('#valve-inlet-grp polygon');
+  v01.forEach(p => { p.setAttribute('fill', valveColor(d.flow > 10 || lying)); p.setAttribute('stroke', valveColor(d.flow > 10 || lying)); });
+  // V-02 Outlet
+  const v02 = document.querySelectorAll('#valve-outlet-grp polygon');
+  v02.forEach(p => { p.setAttribute('fill', valveColor(d.flow > 10 || lying)); p.setAttribute('stroke', valveColor(d.flow > 10 || lying)); });
+  // V-03
+  const v03 = document.querySelectorAll('#valve-inlet2-grp polygon');
+  v03.forEach(p => { p.setAttribute('fill', valveColor(d.flow > 10 || lying)); p.setAttribute('stroke', valveColor(d.flow > 10 || lying)); });
+
+  // ── PIPE COLORS ──
+  const flowing = lying || d.flow > 10;
+  const pc = flowing ? green : gray;
+  ['pipe-in-top','pipe-out-bot','pipe-tfmr-top','pipe-tfmr-bot','pipe-tfmr-left','pipe-tfmr-right','pipe-pump-l','pipe-pump-r','pipe-pump-r2','pipe-left-vert','pipe-left-vert2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('stroke', pc);
+  });
+
+  // Flow arrows visibility
+  const fa = document.getElementById('flow-arrows-1');
+  if (fa) fa.setAttribute('opacity', flowing ? '1' : '0');
+
+  // ── PUMP ──
+  const pumpRunning = lying || d.pump_rpm > 100;
+  const pumpCircle = document.getElementById('pump-circle');
+  const pumpDot = document.getElementById('pump-dot');
+  const pumpTxt = document.getElementById('pump-status-txt');
+  if (pumpCircle) pumpCircle.setAttribute('stroke', pumpRunning ? green : red);
+  if (pumpDot) pumpDot.setAttribute('fill', pumpRunning ? green : red);
+  if (pumpTxt) { pumpTxt.textContent = pumpRunning ? 'RUN' : 'STOP'; pumpTxt.setAttribute('fill', pumpRunning ? green : red); }
+
+  // Rotate impeller when pump running
+  if (pumpRunning) pumpAngle += 8;
+  const impeller = document.getElementById('pump-impeller');
+  if (impeller) impeller.setAttribute('transform', 'rotate(' + pumpAngle + ',0,0)');
+
+  // ── TRANSFORMER HEAT GLOW ──
+  const hf = Math.max(0, (s.winding_temp - 85) / (120 - 85));
+  const tfHeat = document.getElementById('tfmr-heat');
+  if (tfHeat) {
+    if (!lying && hf > 0) {
+      const r = Math.round(hf * 255);
+      tfHeat.setAttribute('stroke', `rgb(${r},${Math.round((1-hf)*80)},0)`);
+      tfHeat.setAttribute('stroke-width', (hf * 4).toFixed(1));
+    } else {
+      tfHeat.setAttribute('stroke', 'transparent');
+    }
+  }
+
+  // ── SENSOR VALUE OVERLAYS ──
+  const wt = d.winding_temp !== undefined ? d.winding_temp : 74;
+  const ot = d.oil_temp !== undefined ? d.oil_temp : 68;
+  const fl = d.flow !== undefined ? d.flow : 840;
+  const pr = d.oil_pressure !== undefined ? d.oil_pressure : 2600;
+  const ld = d.load_mva !== undefined ? d.load_mva : 180;
+  const pu = d.pump_rpm !== undefined ? d.pump_rpm : 1450;
+
+  function tempColor(val, adv, warn, crit) {
+    if (lying) return green;
+    if (val >= crit) return red;
+    if (val >= warn) return '#ff7700';
+    if (val >= adv)  return yellow;
+    return green;
+  }
+
+  const wtEl = document.getElementById('hmi-wtemp-mimic');
+  if (wtEl) { wtEl.textContent = wt.toFixed(1) + '°C'; wtEl.setAttribute('fill', tempColor(lying?74:s.winding_temp, 85, 95, 110)); }
+  const otEl = document.getElementById('hmi-otemp-mimic');
+  if (otEl) { otEl.textContent = ot.toFixed(1) + '°C'; otEl.setAttribute('fill', tempColor(lying?68:s.oil_temp, 80, 90, 105)); }
+  const flEl = document.getElementById('hmi-flow-mimic');
+  if (flEl) { flEl.textContent = Math.round(fl); flEl.setAttribute('fill', lying||fl>200 ? green : red); }
+  const prEl = document.getElementById('hmi-pres-mimic');
+  if (prEl) { prEl.textContent = Math.round(pr); prEl.setAttribute('fill', lying||pr>1500 ? green : red); }
+  const ldEl = document.getElementById('hmi-load-mimic');
+  if (ldEl) { ldEl.textContent = Math.round(ld) + ' MVA'; ldEl.setAttribute('fill', s.tripped&&!lying ? red : green); }
+  const puEl = document.getElementById('hmi-pump-mimic');
+  if (puEl) { puEl.textContent = Math.round(pu); puEl.setAttribute('fill', lying||pu>800 ? green : red); }
+
+  // ── TEMPERATURE TREND ──
+  // Always log real winding temp for trend (operator can't see this — it's what SHOULD be shown)
+  trendData.push(lying ? FROZEN.winding_temp : s.winding_temp);
+  if (trendData.length > TREND_MAX) trendData.shift();
+
+  const tSvg = document.getElementById('trend-svg');
+  const tLine = document.getElementById('trend-line');
+  const tDot = document.getElementById('trend-dot');
+  if (tLine && tSvg && trendData.length > 1) {
+    const W = 400, H = 50;
+    const minT = 60, maxT = 130;
+    function ty(t) { return H - ((t - minT) / (maxT - minT)) * (H - 6) - 2; }
+    const pts = trendData.map((t, i) => {
+      const x = (i / (TREND_MAX - 1)) * W;
+      return x.toFixed(1) + ',' + ty(t).toFixed(1);
+    }).join(' ');
+    tLine.setAttribute('points', pts);
+    // Color based on current displayed value
+    const displayedWT = lying ? FROZEN.winding_temp : s.winding_temp;
+    const lc = displayedWT >= 110 ? red : displayedWT >= 95 ? '#ff7700' : displayedWT >= 85 ? yellow : green;
+    tLine.setAttribute('stroke', lc);
+    const lastX = ((trendData.length - 1) / (TREND_MAX - 1)) * W;
+    if (tDot) { tDot.setAttribute('cx', lastX.toFixed(1)); tDot.setAttribute('cy', ty(trendData[trendData.length-1]).toFixed(1)); tDot.setAttribute('fill', lc); }
+  }
+
+  // ── ALARM PANEL ──
+  updateAlarmPanel(lying);
+}
+
+function updateAlarmPanel(lying) {
+  const s = state;
+  const alarms = [];
+
+  // v6 FIX: When T0832 is active (blindActive), the holding registers
+  // are being spoofed BEFORE the SCADA master reads them. The alarm
+  // logic in any real SCADA system reads from these same registers.
+  // Therefore when T0832 is active, NO alarm can ever fire — the
+  // alarm thresholds are evaluated against spoofed values that show
+  // everything is normal. Pass blindActive directly, not lying.
+  if (!blindActive) {
+    if (s.tripped) alarms.push({ level: 'TRIP', msg: 'THERMAL RELAY TRIPPED — ' + s.winding_temp.toFixed(1) + '°C — BLACKOUT', color: '#ff1a3c' });
+    if (s.alarm >= 3 && !s.tripped) alarms.push({ level: 'CRIT', msg: 'CRITICAL: Winding ' + s.winding_temp.toFixed(1) + '°C — Trip imminent', color: '#ff1a3c' });
+    if (s.alarm >= 2 && s.alarm < 3) alarms.push({ level: 'WARN', msg: 'WARNING: Winding ' + s.winding_temp.toFixed(1) + '°C — Cooling degraded', color: '#ff7700' });
+    if (s.alarm >= 1 && s.alarm < 2) alarms.push({ level: 'ADV', msg: 'ADVISORY: Winding ' + s.winding_temp.toFixed(1) + '°C — Monitor', color: '#ffd600' });
+    if (s.pump_rpm < 10) alarms.push({ level: 'CRIT', msg: 'P-01 PUMP FAILURE — Speed: 0 RPM — No coolant flow', color: '#ff1a3c' });
+    if (s.flow < 10 && s.pump_rpm < 10) alarms.push({ level: 'CRIT', msg: 'FT-01 ZERO FLOW — Cooling system offline', color: '#ff1a3c' });
+    if (!s.inlet) alarms.push({ level: 'WARN', msg: 'V-01 INLET VALVE CLOSED — Cooling blocked', color: '#ff7700' });
+    if (!s.outlet) alarms.push({ level: 'WARN', msg: 'V-02 OUTLET VALVE CLOSED — Cooling blocked', color: '#ff7700' });
+    if (s.oil_pressure < 1000 && s.oil_pressure > 0) alarms.push({ level: 'WARN', msg: 'PT-01 LOW OIL PRESSURE: ' + Math.round(s.oil_pressure) + ' kPa', color: '#ff7700' });
+  }
+
+  const alarmList = document.getElementById('alarm-list');
+  const alCount = document.getElementById('al-count');
+  const now = new Date().toLocaleTimeString('sv-SE', {hour12:false});
+
+  if (alarmList) {
+    if (alarms.length === 0) {
+      alarmList.innerHTML = '<div style="color:#2a4060;">No active alarms ' + (lying ? '<span style="color:#ff1a3c;">&#8212; T0832 ACTIVE: Real alarms may be hidden</span>' : '') + '</div>';
+    } else {
+      alarmList.innerHTML = alarms.map(a =>
+        '<div style="display:flex;gap:8px;"><span style="color:#2a4060;flex-shrink:0;">' + now + '</span>' +
+        '<span style="color:' + a.color + ';font-weight:bold;">[' + a.level + ']</span>' +
+        '<span style="color:' + a.color + ';">' + a.msg + '</span></div>'
+      ).join('');
+    }
+  }
+  if (alCount) {
+    alCount.textContent = alarms.length + ' ACTIVE';
+    alCount.style.color = alarms.length > 0 ? '#ff1a3c' : '#00ff9d';
+  }
+}
+
+// MAIN LOOP
+logEvent('SE-Grid-07 initialised — 250 MVA OFAF — IEC 60076-7 thermal model loaded','ok');
+logEvent('Modbus TCP port 502 OPEN — NO authentication (designed 1979, Modicon)','warn');
+logEvent('RTU/PLC box visible in 3D scene — this is what T0832+T0855 attack','info');
+logEvent('NOTE: Physical damage = consequence of RTU/PLC digital attack, not direct hardware attack','info');
+
+let lastSim=0;
+function animate(time){
+  requestAnimationFrame(animate);resizeCanvas();
+  const t=time*.001;
+  if(t-lastSim>0.5){iecTick(0.5/60);tick++;renderAll();checkAlarmLog();updateMimic();lastSim=t;}
+  update3D(t);renderer.render(scene,camera);
+}
+animate(0);
+</script>
+</body>
+</html>
